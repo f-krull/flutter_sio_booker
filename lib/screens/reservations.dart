@@ -1,30 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:lcbc_athletica_booker/sioapi.dart';
-import 'package:lcbc_athletica_booker/workout.dart';
+import 'package:lcbc_athletica_booker/reservationscache.dart';
 import 'package:provider/provider.dart';
 
-import '../dbsettings.dart';
 import '../helpers.dart';
+import '../reservation.dart';
 
 class ShowReservationsScreen extends StatelessWidget {
   const ShowReservationsScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return LaScaffold(
-        body: FutureBuilder<List<Reservation>>(future: (() async {
-      final dbs = context.read<DbSettings>();
-      final accessToken = dbs.getStr(DbSettings.ACCESS_TOKEN_STR);
-      return await fetchReservations(accessToken);
-    })(), builder: (context, snapshot) {
-      if (snapshot.hasData) {
-        return Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: ReservationsList(reservations: snapshot.data!),
-        );
+    return LaScaffold(body: Consumer<ReservationsCache>(
+        builder: (context, reservationsCache, child) {
+      if (reservationsCache.state != ReservationsCacheState.ready) {
+        return const Center(child: CircularProgressIndicator());
       }
-      return const Center(child: CircularProgressIndicator());
+      return Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: ReservationsList(reservations: reservationsCache.reservations),
+      );
     }));
   }
 }

@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'dart:io' as io;
 
 import 'package:intl/intl.dart';
+import 'package:lcbc_athletica_booker/reservation.dart';
 
 import 'workout.dart';
 
@@ -64,6 +65,7 @@ Future<void> putReservation(Workout workout, String accessToken) async {
 
 Future<List<Reservation>> fetchReservations(String accessToken) async {
   const url = "https://www.sio.no/api/idrett/v1/secure/reservations";
+  print("fetching $url");
   final headers = {'AccessToken': accessToken};
   http.Response r = await http.get(Uri.parse(url), headers: headers);
   List<Reservation> l = [];
@@ -73,5 +75,6 @@ Future<List<Reservation>> fetchReservations(String accessToken) async {
   l = (jsonDecode(r.body) as List<dynamic>)
       .map((e) => Reservation.fromJson(e))
       .toList();
+  print("fetching $url done");
   return l;
 }

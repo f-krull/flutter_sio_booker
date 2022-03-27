@@ -8,6 +8,7 @@ import 'db.dart';
 import 'dbsettings.dart';
 import 'dbwhishlist.dart';
 import 'helpers.dart';
+import 'reservationscache.dart';
 import 'screens/workouts.dart';
 import 'workout.dart';
 
@@ -51,7 +52,14 @@ void main() async {
       providers: [
         Provider<DbWhishlist>(create: (_) => dbwl),
         Provider<DbSettings>(create: (_) => dbsettings),
-        // Provider<Future<String>>(create: (_) async => ""),
+        ChangeNotifierProvider<ReservationsCache>(
+          create: (context) {
+            final r = ReservationsCache();
+            r.update(context);
+            return r;
+          },
+          lazy: false,
+        ),
       ],
       child: LaApp(
           firstScreen: hasLogin ? const HomeScreen() : const LoginScreen()),

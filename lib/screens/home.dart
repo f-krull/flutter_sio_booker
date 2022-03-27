@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:lcbc_athletica_booker/screens/reservations.dart';
 import 'package:lcbc_athletica_booker/screens/settings.dart';
 import 'package:lcbc_athletica_booker/screens/whishlist.dart';
+import 'package:provider/provider.dart';
 
 import '../helpers.dart';
 import '../main.dart';
+import '../reservationscache.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -28,8 +30,12 @@ class HomeScreen extends StatelessWidget {
           ),
           TextButton(
               child: const Text("My reservations"),
-              onPressed: () =>
-                  pushPage(context, const ShowReservationsScreen())),
+              onPressed: () {
+                // update reservations
+                Provider.of<ReservationsCache>(context, listen: false)
+                    .update(context);
+                pushPage(context, const ShowReservationsScreen());
+              }),
           TextButton(
               child: const Text("Whish list"),
               onPressed: () => pushPage(context, const WhishlistScreen()))
