@@ -38,3 +38,5 @@ String printDuration(Duration duration) {
   String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
   return "$twoDigitHours:$twoDigitMinutes:$twoDigitSeconds";
 }
+
+const int kAlarmId = 0;

@@ -33,6 +33,7 @@ dependencies:
   intl:
   sqflite:
   provider:
+  android_alarm_manager_plus:
 
 
   # The following adds the Cupertino Icons font to your application.

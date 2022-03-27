@@ -1,3 +1,4 @@
+import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:lcbc_athletica_booker/screens/home.dart';
 import 'package:lcbc_athletica_booker/screens/login.dart';
@@ -14,18 +15,43 @@ import 'workout.dart';
 // schedule booking
 //
 
+// static
+
+// Future<void> bla() async {
+//   await AndroidAlarmManager.periodic(
+//       const Duration(seconds: 15), kAlarmId, doStuff);
+// }
+
+// save access token in shared prefs
+// save workout data in shared prefs with alarm id as key
+// schedule alarm for next avail booking
+// when alarm is triggered, do booking
+
+// final prefs = await SharedPreferences.getInstance();
+//  int currentCount = prefs.getInt(countKey) ?? 0;
+//     await prefs.setInt(countKey, currentCount + 1);
+// This will be null if we're running in the background.
+// uiSendPort ??= IsolateNameServer.lookupPortByName(isolateName);
+// uiSendPort?.send(null);
+
+// await prefs.reload();
+
+// https://stackoverflow.com/questions/66590587/flutter-android-alarm-manager-plugin-cant-pass-a-parameter-to-a-callback-functi
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final ladb = await LaDb.create();
   final dbwl = DbWhishlist(ladb);
   final dbsettings = DbSettings(ladb);
   await ladb.init();
+  await AndroidAlarmManager.initialize();
   bool hasLogin = dbsettings.isDef(DbSettings.ACCESS_TOKEN_STR);
   runApp(
     MultiProvider(
       providers: [
         Provider<DbWhishlist>(create: (_) => dbwl),
         Provider<DbSettings>(create: (_) => dbsettings),
+        // Provider<Future<String>>(create: (_) async => ""),
       ],
       child: LaApp(
           firstScreen: hasLogin ? const HomeScreen() : const LoginScreen()),
