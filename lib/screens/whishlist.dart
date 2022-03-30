@@ -3,13 +3,18 @@ import 'package:intl/intl.dart';
 import 'package:lcbc_athletica_booker/dbsettings.dart';
 import 'package:lcbc_athletica_booker/dbwhishlist.dart';
 import 'package:lcbc_athletica_booker/helpers.dart';
+import 'package:lcbc_athletica_booker/whishlistcache.dart';
 import 'package:provider/provider.dart';
 
 import '../workout.dart';
 
-class WhishlistItem extends StatelessWidget {
+class _WlItemSubTitle extends StatelessWidget {
+  final df = DateFormat('EEE dd/MM HH:mm');
   final Workout workout;
-  const WhishlistItem({Key? key, required this.workout}) : super(key: key);
+  final Stream<int> _updateStream =
+      Stream<int>.periodic(const Duration(seconds: 1), (_) => 1);
+
+  _WlItemSubTitle({Key? key, required this.workout}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -17,12 +22,33 @@ class WhishlistItem extends StatelessWidget {
         hours: context
             .read<DbSettings>()
             .getInt(DbSettings.BOOKING_AVAILABLE_HOURS_INT));
-    final df = DateFormat('EEE dd/MM HH:mm');
-    final timeNow = DateTime.now();
+
     final bookingAvailable = workout.date.subtract(bookingAvailableDelta);
-    final bool isAvailableForBooking = bookingAvailable.isBefore(timeNow);
+
+    return StreamBuilder(
+        initialData: 1,
+        stream: _updateStream,
+        builder: (BuildContext contxt, _) {
+          final timeNow = DateTime.now();
+          final bool isAvailableForBooking = bookingAvailable.isBefore(timeNow);
+          return Text(df.format(workout.date.toLocal()) +
+              "  " +
+              (!isAvailableForBooking
+                  ? "opens in: " +
+                      printDuration(bookingAvailable.difference(timeNow))
+                  : "ready (${workout.reservationsCount}/${workout.maxReservations})"));
+        });
+  }
+}
+
+class WhishlistItem extends StatelessWidget {
+  final Workout workout;
+  const WhishlistItem({Key? key, required this.workout}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
     return ListTile(
-        tileColor: isAvailableForBooking ? Colors.green[50] : Colors.grey[100],
+        tileColor: Colors.grey[100],
         dense: true,
         visualDensity: VisualDensity.compact,
         title: Text("${workout.name}  (${workout.instructorName})"),
@@ -41,12 +67,9 @@ class WhishlistItem extends StatelessWidget {
         //       ));
         //     },
         //     child: const Icon(Icons.star)),
-        subtitle: Text(df.format(workout.date.toLocal()) +
-            "  " +
-            (!isAvailableForBooking
-                ? "opens in:" +
-                    printDuration(bookingAvailable.difference(timeNow))
-                : "ready (${workout.reservationsCount}/${workout.maxReservations})")));
+        subtitle: _WlItemSubTitle(
+          workout: workout,
+        ));
   }
 }
 
@@ -77,15 +100,9 @@ class WhishlistScreen extends StatelessWidget {
         body: Padding(
             padding: const EdgeInsets.all(8.0),
             child: Column(children: [
-              Expanded(
-                  child: FutureBuilder<List<Workout>>(future: (() async {
-                final dbs = context.read<DbWhishlist>();
-                return await dbs.fetchAll();
-              })(), builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  return Whishlist(workouts: snapshot.data!);
-                }
-                return const Center(child: CircularProgressIndicator());
+              Expanded(child: Consumer<WhishlistCache>(
+                  builder: (context, whishlistCache, child) {
+                return Whishlist(workouts: whishlistCache.workouts);
               }))
             ])));
   }

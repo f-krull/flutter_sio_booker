@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lcbc_athletica_booker/backgroundbooker.dart';
 import 'package:lcbc_athletica_booker/screens/reservations.dart';
 import 'package:lcbc_athletica_booker/screens/settings.dart';
 import 'package:lcbc_athletica_booker/screens/whishlist.dart';
@@ -38,7 +39,10 @@ class HomeScreen extends StatelessWidget {
               }),
           TextButton(
               child: const Text("Whish list"),
-              onPressed: () => pushPage(context, const WhishlistScreen()))
+              onPressed: () => pushPage(context, const WhishlistScreen())),
+          TextButton(
+              child: const Text("Run task"),
+              onPressed: () => BackgroundBooker.init(context)),
         ],
       )),
     );

@@ -9,7 +9,7 @@ class DbWhishlist extends DbListener {
   @override
   Future<void> onInit() async {
     final db = await database();
-    await db.execute(_kDropTableWhishlist);
+    //await db.execute(_kDropTableWhishlist);
     await db.execute(_kCreateTableWhishlist);
   }
 
@@ -21,6 +21,13 @@ class DbWhishlist extends DbListener {
       w.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+    return r;
+  }
+
+  Future<int> remove(Workout w) async {
+    final db = await database();
+    final int r = await db.delete(_kTableNameWhishlist,
+        where: "id = ? and centerId = ?", whereArgs: [w.id, w.centerId]);
     return r;
   }
 
@@ -45,6 +52,6 @@ CREATE TABLE IF NOT EXISTS $_kTableNameWhishlist(
   centerName TEXT,   
   centerId TEXT,
   instructorName TEXT,
-  PRIMARY KEY (id)
+  PRIMARY KEY (id, centerId)
 );
 """;

@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lcbc_athletica_booker/dbwhishlist.dart';
+import 'package:lcbc_athletica_booker/whishlistcache.dart';
 import 'package:provider/provider.dart';
 
 import '../dbsettings.dart';
 import '../helpers.dart';
 import '../main.dart';
+import '../reservationscache.dart';
 import '../sioapi.dart';
 import '../workout.dart';
+
+class BookedWorkoutId {
+  final String centerId;
+  final int workoutId;
+
+  BookedWorkoutId({required this.centerId, required this.workoutId});
+}
 
 class ChooseWorkoutScreen extends StatelessWidget {
   final DateTime date;
@@ -27,7 +36,22 @@ class ChooseWorkoutScreen extends StatelessWidget {
                       future: fetchWorkouts(dateFrom: date, dateTo: date),
                       builder: (context, snapshot) {
                         if (snapshot.hasData) {
-                          return WorkoutList(workouts: snapshot.data!);
+                          return Consumer<ReservationsCache>(
+                              builder: (context, reservationsCache, child) {
+                            // get booked workouts (or null)
+                            final List<BookedWorkoutId>? bookedWorkouts =
+                                reservationsCache.state ==
+                                        ReservationsCacheState.ready
+                                    ? reservationsCache.reservations
+                                        .map((r) => BookedWorkoutId(
+                                            centerId: r.centerId,
+                                            workoutId: r.id))
+                                        .toList()
+                                    : null;
+                            return WorkoutList(
+                                workouts: snapshot.data!,
+                                bookedWorkouts: bookedWorkouts);
+                          });
                         }
                         return const Center(child: CircularProgressIndicator());
                       })),
@@ -73,10 +97,52 @@ class NavButton extends StatelessWidget {
   }
 }
 
+class BookButton extends StatelessWidget {
+  final Workout workout;
+  final List<BookedWorkoutId>? bookedWorkoutIds;
+  final DateFormat df;
+
+  const BookButton(
+      {Key? key,
+      required this.workout,
+      required this.bookedWorkoutIds,
+      required this.df})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    if (bookedWorkoutIds == null) {
+      return const CircularProgressIndicator();
+    }
+    final isBooked = bookedWorkoutIds!.any(
+        (e) => e.centerId == workout.centerId && e.workoutId == workout.id);
+    return TextButton(
+        style: ButtonStyle(
+          foregroundColor: MaterialStateProperty.all<Color>(Colors.blue),
+          backgroundColor: MaterialStateProperty.all<Color>(Colors.black12),
+        ),
+        onPressed: isBooked
+            ? null
+            : () async {
+                // TODO: book or queue depending on time
+                await context.read<WhishlistCache>().add(workout);
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text(
+                      "Added \"${workout.name}\" at ${workout.centerName}, ${df.format(workout.date.toLocal())}"),
+                ));
+              },
+        child: isBooked
+            ? const Icon(Icons.star, color: Colors.red)
+            : const Icon(Icons.star_border_outlined, color: Colors.red));
+  }
+}
+
 class WorkoutList extends StatefulWidget {
   final List<Workout> workouts;
+  final List<BookedWorkoutId>? bookedWorkouts;
 
-  const WorkoutList({Key? key, required this.workouts}) : super(key: key);
+  const WorkoutList({Key? key, required this.workouts, this.bookedWorkouts})
+      : super(key: key);
 
   @override
   State<WorkoutList> createState() => _WorkoutListState();
@@ -168,22 +234,10 @@ class _WorkoutListState extends State<WorkoutList> {
                   title: Text("${workout.name}  (${workout.instructorName})"),
                   leading:
                       Text(workout.centerName.replaceFirst("Athletica", "")),
-                  trailing: TextButton(
-                      style: ButtonStyle(
-                        foregroundColor:
-                            MaterialStateProperty.all<Color>(Colors.blue),
-                        backgroundColor:
-                            MaterialStateProperty.all<Color>(Colors.white),
-                      ),
-                      onPressed: () async {
-                        // TODO: book or queue depending on time
-                        await context.read<DbWhishlist>().add(workout);
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text(
-                              "Added \"${workout.name}\" at ${workout.centerName}, ${df.format(workout.date.toLocal())}"),
-                        ));
-                      },
-                      child: const Icon(Icons.star)),
+                  trailing: BookButton(
+                      workout: workout,
+                      bookedWorkoutIds: widget.bookedWorkouts,
+                      df: df),
                   subtitle: Text(df.format(workout.date.toLocal()) +
                       "  " +
                       (bookingAvailable.isAfter(timeNow)
@@ -191,14 +245,14 @@ class _WorkoutListState extends State<WorkoutList> {
                               printDuration(
                                   bookingAvailable.difference(timeNow))
                           : "ready (${workout.reservationsCount}/${workout.maxReservations})")),
-                  onTap: () => {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                          builder: (context) => ShowWorkoutScreen(
-                                workout: workout,
-                              )),
-                    )
-                  },
+                  // onTap: () => {
+                  //   Navigator.of(context).push(
+                  //     MaterialPageRoute(
+                  //         builder: (context) => ShowWorkoutScreen(
+                  //               workout: workout,
+                  //             )),
+                  //   )
+                  // },
                 );
               })),
     ]);

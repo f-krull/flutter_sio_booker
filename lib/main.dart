@@ -1,9 +1,8 @@
-import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:lcbc_athletica_booker/screens/home.dart';
 import 'package:lcbc_athletica_booker/screens/login.dart';
+import 'package:lcbc_athletica_booker/whishlistcache.dart';
 import 'package:provider/provider.dart';
-
 import 'db.dart';
 import 'dbsettings.dart';
 import 'dbwhishlist.dart';
@@ -44,8 +43,10 @@ void main() async {
   final ladb = await LaDb.create();
   final dbwl = DbWhishlist(ladb);
   final dbsettings = DbSettings(ladb);
+  final whishlist = WhishlistCache(dbwl);
+  final reservations = ReservationsCache(whishlist);
   await ladb.init();
-  await AndroidAlarmManager.initialize();
+  await whishlist.init();
   bool hasLogin = dbsettings.isDef(DbSettings.ACCESS_TOKEN_STR);
   runApp(
     MultiProvider(
@@ -54,12 +55,13 @@ void main() async {
         Provider<DbSettings>(create: (_) => dbsettings),
         ChangeNotifierProvider<ReservationsCache>(
           create: (context) {
-            final r = ReservationsCache();
-            r.update(context);
-            return r;
+            // get reservations on app start
+            reservations.update(context);
+            return reservations;
           },
           lazy: false,
         ),
+        ChangeNotifierProvider<WhishlistCache>(create: (context) => whishlist),
       ],
       child: LaApp(
           firstScreen: hasLogin ? const HomeScreen() : const LoginScreen()),
