@@ -1,3 +1,25 @@
+class WorkoutId {
+  final String centerId;
+  final int classId;
+
+  WorkoutId({required this.centerId, required this.classId});
+
+  @override
+  bool operator ==(other) {
+    return other is WorkoutId &&
+        other.centerId == centerId &&
+        other.classId == classId;
+  }
+
+  String toString() => "$centerId/$classId";
+
+  @override
+  int get hashCode => classId;
+
+  factory WorkoutId.fromWorkout(Workout w) =>
+      WorkoutId(centerId: w.centerId, classId: w.id);
+}
+
 class Workout {
   final int id;
   final String name;

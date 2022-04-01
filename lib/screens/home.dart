@@ -9,8 +9,20 @@ import '../helpers.dart';
 import '../main.dart';
 import '../reservationscache.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void didChangeDependencies() {
+    // good place to init - as we have password here
+    BackgroundBooker.init(context);
+    super.didChangeDependencies();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,9 +52,6 @@ class HomeScreen extends StatelessWidget {
           TextButton(
               child: const Text("Whish list"),
               onPressed: () => pushPage(context, const WhishlistScreen())),
-          TextButton(
-              child: const Text("Run task"),
-              onPressed: () => BackgroundBooker.init(context)),
         ],
       )),
     );

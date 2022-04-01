@@ -4,23 +4,6 @@ import 'package:lcbc_athletica_booker/reservation.dart';
 
 import 'workout.dart';
 
-class _WcId {
-  final int classId;
-  final String centerId;
-
-  _WcId(this.classId, this.centerId);
-
-  @override
-  bool operator ==(other) {
-    return other is _WcId &&
-        other.centerId == centerId &&
-        other.classId == classId;
-  }
-
-  @override
-  int get hashCode => classId;
-}
-
 class WhishlistCache with ChangeNotifier {
   final DbWhishlist dbw;
   List<Workout> _workouts = [];
@@ -39,13 +22,21 @@ class WhishlistCache with ChangeNotifier {
     return r;
   }
 
-  get workouts => _workouts;
+  Future<int> remove(Workout w) async {
+    final r = await dbw.remove(w);
+    _workouts = await dbw.fetchAll();
+    notifyListeners();
+    return r;
+  }
+
+  List<Workout> get workouts => _workouts;
 
   Future<void> update(List<Reservation> reservations) async {
-    final Set<_WcId> resIds =
-        reservations.map((e) => _WcId(e.id, e.centerId)).toSet();
+    final Set<WorkoutId> resIds = reservations
+        .map((e) => WorkoutId(classId: e.id, centerId: e.centerId))
+        .toSet();
     List<Workout> toRemove = _workouts.where((w) {
-      final b = resIds.contains(_WcId(w.id, w.centerId));
+      final b = resIds.contains(WorkoutId(classId: w.id, centerId: w.centerId));
       return b;
     }).toList();
     if (toRemove.isNotEmpty) {

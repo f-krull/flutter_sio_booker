@@ -33,10 +33,10 @@ class ReservationsCache with ChangeNotifier {
     if (state == ReservationsCacheState.loading) {
       return;
     }
-    reservations.clear();
     state = ReservationsCacheState.loading;
     notifyListeners();
-    reservations = await fetchReservations(accessToken);
+    final r = await fetchReservations(accessToken);
+    reservations = r;
     state = ReservationsCacheState.ready;
     notifyListeners();
   }

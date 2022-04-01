@@ -1,8 +1,11 @@
+import 'package:background_fetch/background_fetch.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:lcbc_athletica_booker/screens/home.dart';
 import 'package:lcbc_athletica_booker/screens/login.dart';
 import 'package:lcbc_athletica_booker/whishlistcache.dart';
 import 'package:provider/provider.dart';
+import 'backgroundbooker.dart';
 import 'db.dart';
 import 'dbsettings.dart';
 import 'dbwhishlist.dart';
@@ -12,34 +15,24 @@ import 'screens/workouts.dart';
 import 'workout.dart';
 
 // todo
-// schedule booking
-//
-
-// static
-
-// Future<void> bla() async {
-//   await AndroidAlarmManager.periodic(
-//       const Duration(seconds: 15), kAlarmId, doStuff);
-// }
-
-// save access token in shared prefs
-// save workout data in shared prefs with alarm id as key
-// schedule alarm for next avail booking
-// when alarm is triggered, do booking
-
-// final prefs = await SharedPreferences.getInstance();
-//  int currentCount = prefs.getInt(countKey) ?? 0;
-//     await prefs.setInt(countKey, currentCount + 1);
-// This will be null if we're running in the background.
-// uiSendPort ??= IsolateNameServer.lookupPortByName(isolateName);
-// uiSendPort?.send(null);
-
-// await prefs.reload();
-
-// https://stackoverflow.com/questions/66590587/flutter-android-alarm-manager-plugin-cant-pass-a-parameter-to-a-callback-functi
+// book directly (from whishlist / from workout list)
+// call BackgroundBooker init from relevant places
+// cancel booking (from reservations)
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+  const AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('app_icon');
+  const InitializationSettings initializationSettings =
+      InitializationSettings(android: initializationSettingsAndroid);
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings,
+      onSelectNotification: (String? payload) async {
+    if (payload != null) {
+      debugPrint('notification payload: $payload');
+    }
+  });
   final ladb = await LaDb.create();
   final dbwl = DbWhishlist(ladb);
   final dbsettings = DbSettings(ladb);
@@ -47,6 +40,10 @@ void main() async {
   final reservations = ReservationsCache(whishlist);
   await ladb.init();
   await whishlist.init();
+  final secStream =
+      Stream<SteamSec>.periodic(const Duration(seconds: 1), (sec) {
+    return sec;
+  });
   bool hasLogin = dbsettings.isDef(DbSettings.ACCESS_TOKEN_STR);
   runApp(
     MultiProvider(
@@ -62,11 +59,15 @@ void main() async {
           lazy: false,
         ),
         ChangeNotifierProvider<WhishlistCache>(create: (context) => whishlist),
+        Provider<FlutterLocalNotificationsPlugin>(
+            create: (_) => flutterLocalNotificationsPlugin),
+        StreamProvider<SteamSec>(initialData: 1, create: (_) => secStream)
       ],
       child: LaApp(
           firstScreen: hasLogin ? const HomeScreen() : const LoginScreen()),
     ),
   );
+  BackgroundFetch.registerHeadlessTask(backgroundFetchHeadlessTask);
 }
 
 class LaApp extends StatelessWidget {
@@ -90,8 +91,8 @@ class SelectDateScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(),
+    return LaScaffold(
+        title: "Select date",
         body: CalendarDatePicker(
           firstDate: DateTime.now(),
           lastDate: DateTime.now().add(const Duration(days: 120)),

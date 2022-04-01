@@ -47,19 +47,25 @@ Future<List<Workout>> fetchWorkouts(
 }
 
 Future<void> putReservation(Workout workout, String accessToken) async {
-  // https://www.sio.no/api/idrett/v1/secure/reservations/721/42839126
-  var bookTime = workout.date.subtract(const Duration(days: 5));
-  var bookTimeDelta = bookTime.difference(DateTime.now());
-  print("setting timer for ${bookTime.toLocal().toString()}");
-  Timer(bookTimeDelta, () async {
-    var url = "$urlBase/secure/reservations/${workout.centerId}/${workout.id}";
-    final headers = {'AccessToken': accessToken};
-    http.Response r = await http.put(Uri.parse(url), headers: headers);
-    print(r.headers);
-    print(r.body);
-    print("booked");
-  });
+  var url = "$urlBase/secure/reservations/${workout.centerId}/${workout.id}";
+  final headers = {'AccessToken': accessToken};
+  http.Response r = await http.put(Uri.parse(url), headers: headers);
+  print(r.headers);
+  print(r.body);
+  print("booked");
+  return;
+}
 
+Future<void> deleteReservation(Workout workout, String accessToken) async {
+  var url =
+      "$urlBase/secure/reservations/${workout.centerId}/${workout.id}/${workout.id}";
+  final headers = {'AccessToken': accessToken};
+  http.Response r = await http.delete(Uri.parse(url), headers: headers);
+  if (r.statusCode != io.HttpStatus.noContent) {
+    throw Exception(
+        "status code was ${r.statusCode}; expected ${io.HttpStatus.noContent}");
+  }
+  print("cancelled");
   return;
 }
 

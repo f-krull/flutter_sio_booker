@@ -13,176 +13,138 @@
 // import 'workout.dart';
 // import 'package:path_provider/path_provider.dart';
 
+import 'dart:convert';
+
 import 'package:background_fetch/background_fetch.dart';
 import 'package:flutter/widgets.dart';
-import 'package:lcbc_athletica_booker/sioapi.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:lcbc_athletica_booker/whishlistcache.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'dbsettings.dart';
-import 'dbwhishlist.dart';
+import 'helpers.dart';
+import 'sioapi.dart';
 import 'workout.dart';
 
-const _kKeyAccessTokenStr = "accessToken";
+const _kKeyCommDataStr = "commData";
 
-// const int _kAlarmId = 0;
+class Notification {
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
 
-// class _CommData {
-//   final String accessToken;
-//   final Map<int, Workout> workouts;
+  Future<void> init() async {
+    // init  notifications
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('app_icon');
+    const InitializationSettings initializationSettings =
+        InitializationSettings(android: initializationSettingsAndroid);
+    await flutterLocalNotificationsPlugin.initialize(initializationSettings,
+        onSelectNotification: (String? payload) async {
+      if (payload != null) {
+        debugPrint('notification payload: $payload');
+      }
+    });
+  }
 
-//   _CommData(this.accessToken, this.workouts);
+  void showNow({required String title, required String body}) {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails('fk_channel_id', 'fk channel',
+            channelDescription: 'some channel description',
+            importance: Importance.defaultImportance,
+            priority: Priority.defaultPriority,
+            ticker: 'ticker');
+    const NotificationDetails platformChannelSpecifics =
+        NotificationDetails(android: androidPlatformChannelSpecifics);
+    flutterLocalNotificationsPlugin
+        .show(0, title, body, platformChannelSpecifics, payload: 'item x');
+  }
+}
 
-//   Future<void> writeData() async {
-//     final prefs = await SharedPreferences.getInstance();
-//     // final file = await _localFile;
-//     // // Write the file
-//     // return file.writeAsString(jsonEncode({
-//     //   "access_token": accessToken,
-//     //   "workouts": {
-//     //     ...workouts.map<String, Map<String, dynamic>>((key, value) {
-//     //       return MapEntry(key.toString(), value.toMap());
-//     //     })
-//     //   }
-//     // }));
-//   }
-
-//   static Future<void> read() async {
-//     // final file = await _localFile;
-//     // final contents = await file.readAsString();
-//     //final isolate = await FlutterIsolate.spawn(isolate1, "hello");
-//     // print(contents);
-//     // return int.parse(contents);
-//   }
-
-//   // static Future<File> get _localFile async {
-//   //   // final path = await getApplicationDocumentsDirectory();
-//   //   // return File('$path/counter.txt');
-//   // }
-// }
-
-// class BackgroundBooker {
-//   static Future<void> init(BuildContext context) async {
-//     final dbs = context.read<DbSettings>();
-//     final accessToken = dbs.getStr(DbSettings.ACCESS_TOKEN_STR);
-//     final dbwl = context.read<DbWhishlist>();
-//     // workouts with alarm ids
-//     final Map<int, Workout> indexedWorkouts =
-//         (await dbwl.fetchAll()).asMap().map((index, e) => MapEntry(index, e));
-//     final commData = _CommData(accessToken, indexedWorkouts);
-//     commData.writeData();
-//     await AndroidAlarmManager.oneShot(
-//         const Duration(seconds: 5), _kAlarmId, runAlarmCallback);
-//   }
-// }
-
-// runAlarmCallback(int alarmId) {
-//   print("running alarm $alarmId");
-//   //await Future.delayed(Duration(seconds: 2));
-//   print("read:");
-//   (() async {
-//     final bla = await SharedPreferences.getInstance();
-//     print(bla);
-//   })();
-//   //final prefs = await SharedPreferences.getInstance();
-//   print("done");
-//   _CommData.read();
-
-//   //print("accessToken is $accessToken");
-// }
-
-// class BackgroundBooker {
-//   static Future<void> init(BuildContext context) async {
-//     final dbs = context.read<DbSettings>();
-//     final accessToken = dbs.getStr(DbSettings.ACCESS_TOKEN_STR);
-//     final dbwl = context.read<DbWhishlist>();
-//     // workouts with alarm ids
-//     final Map<int, Workout> indexedWorkouts =
-//         (await dbwl.fetchAll()).asMap().map((index, e) => MapEntry(index, e));
-//     final commData = _CommData(accessToken, indexedWorkouts);
-//     commData.writeData();
-//     await AndroidAlarmManager.oneShot(
-//         const Duration(seconds: 5), _kAlarmId, runAlarmCallback);
-//   }
-// }
-
-void backgroundFetchHeadlessTask(HeadlessTask task) async {
+Future<void> backgroundFetchHeadlessTask(HeadlessTask task) async {
   var taskId = task.taskId;
+  print("backgroundFetchHeadlessTask start $taskId");
   var timeout = task.timeout;
   if (timeout) {
-    print("[BackgroundFetch] Headless task timed-out: $taskId");
+    print("backgroundFetchHeadlessTask timed-out: $taskId");
     BackgroundFetch.finish(taskId);
     return;
   }
-  // putReservation(indexedWorkouts.entries.first.value, accessToken);
-  print("[BackgroundFetch] Headless event received: $taskId");
-
-  var timestamp = DateTime.now();
-
-  var prefs = await SharedPreferences.getInstance();
-  print(prefs.getString(_kKeyAccessTokenStr));
-
-  // // Read fetch_events from SharedPreferences
-  // var events = <String>[];
-  // var json = prefs.getString(EVENTS_KEY);
-  // if (json != null) {
-  //   events = jsonDecode(json).cast<String>();
-  // }
-  // // Add new event.
-  // events.insert(0, "$taskId@$timestamp [Headless]");
-  // // Persist fetch events in SharedPreferences
-  // prefs.setString(EVENTS_KEY, jsonEncode(events));
-
-  // if (taskId == 'flutter_background_fetch') {
-  //   /* DISABLED:  uncomment to fire a scheduleTask in headlessTask.
-  //   BackgroundFetch.scheduleTask(TaskConfig(
-  //       taskId: "com.transistorsoft.customtask",
-  //       delay: 5000,
-  //       periodic: false,
-  //       forceAlarmManager: false,
-  //       stopOnTerminate: false,
-  //       enableHeadless: true
-  //   ));
-  //    */
-  // }
+  // try init notifications to be able to show errors
+  final notification = Notification();
+  try {
+    await notification.init();
+  } catch (e) {
+    print("error init notifications: $e");
+  }
+  // try to find workout
+  Workout? workout;
+  String accessToken = "";
+  try {
+    final commData = await _CommData.read();
+    accessToken = commData.accessToken;
+    workout = commData.workouts[taskId];
+    if (workout == null) {
+      throw Exception("Workout ($taskId) not found.");
+    }
+  } catch (e) {
+    notification.showNow(
+        title: "Failed to book workout $taskId", body: "Internal error: $e");
+  }
+  // try to reserve workout
+  try {
+    print("reserving my workout: ${jsonEncode(workout?.toMap())}");
+    await putReservation(workout!, accessToken);
+    notification.showNow(
+        title: 'Yay, ${workout.name} as been booked',
+        body: "${workout.date.toLocal()} at ${workout.centerId}");
+  } catch (e) {
+    notification.showNow(
+        title: 'Failed to book workout "${workout?.name}"',
+        body:
+            "Please book manually: ${workout?.date.toLocal()},${workout?.centerName}");
+    print(e);
+  }
   BackgroundFetch.finish(taskId);
 }
 
 class _CommData {
   final String accessToken;
-  final Map<int, Workout> workouts;
+  final Map<String, Workout> workouts;
 
   _CommData(this.accessToken, this.workouts);
 
   Future<void> writeData() async {
     final prefs = await SharedPreferences.getInstance();
-    prefs.setString(_kKeyAccessTokenStr, accessToken);
-    // final file = await _localFile;
-    // // Write the file
-    // return file.writeAsString(jsonEncode({
-    //   "access_token": accessToken,
-    //   "workouts": {
-    //     ...workouts.map<String, Map<String, dynamic>>((key, value) {
-    //       return MapEntry(key.toString(), value.toMap());
-    //     })
-    //   }
-    // }));
+    await prefs.setString(
+        _kKeyCommDataStr,
+        jsonEncode({
+          "access_token": accessToken,
+          "workouts": {
+            ...workouts.map<String, Map<String, dynamic>>((key, value) {
+              return MapEntry(key.toString(), value.toMap());
+            })
+          }
+        }));
   }
 
-  static _CommData read() {
-    return _CommData("", {});
+  static Future<_CommData> read() async {
+    final prefs = await SharedPreferences.getInstance();
+    final Map<String, dynamic> j =
+        jsonDecode(prefs.getString(_kKeyCommDataStr)!);
+    final jIndexedWorkouts = j["workouts"] as Map<String, dynamic>;
+    final t = jIndexedWorkouts.map<String, Workout>(
+        (taskId, v) => MapEntry(taskId, Workout.fromMap(v)));
+    return _CommData(j["access_token"], t);
   }
 }
 
-void _onBackgroundFetch(String taskId) async {
-  var prefs = await SharedPreferences.getInstance();
-  var timestamp = DateTime.now();
-  // This is the fetch-event callback.
-  print("[BackgroundFetch] Event received: $taskId");
-  backgroundFetchHeadlessTask(HeadlessTask(taskId, false));
-  BackgroundFetch.finish(taskId);
+Future<void> _onBackgroundFetch(String taskId) async {
+  print("_onBackgroundFetch: $taskId");
+  await backgroundFetchHeadlessTask(HeadlessTask(taskId, false));
 }
+
+String _getTaskId(Workout workout) => "com.${workout.id}.${workout.centerId}";
 
 class BackgroundBooker {
   static Future<void> init(BuildContext context) async {
@@ -190,30 +152,55 @@ class BackgroundBooker {
     final accessToken = dbs.getStr(DbSettings.ACCESS_TOKEN_STR);
     final dbwl = context.read<WhishlistCache>();
     // workouts with alarm ids
-    final Map<int, Workout> indexedWorkouts =
-        (await dbwl.workouts).asMap().map((index, e) => MapEntry(index, e));
+    final Map<String, Workout> indexedWorkouts =
+        dbwl.workouts.asMap().map((index, e) => MapEntry(_getTaskId(e), e));
     final commData = _CommData(accessToken, indexedWorkouts);
-    commData.writeData();
+    await commData.writeData();
     BackgroundFetch.stop();
-    print("creating healess task");
+    print("creating headless task");
     var status = await BackgroundFetch.configure(
         BackgroundFetchConfig(
-          minimumFetchInterval: 9999999,
+          minimumFetchInterval: 999999999, // -> 31.70979 yrs
           enableHeadless: true,
         ),
         _onBackgroundFetch);
 
-    // indexedWorkouts.entries.where((element) {
-    //   element.value.date.isAfter(other)
-    // });
-    indexedWorkouts.forEach((index, workout) {
+    final bookingAvailableDelta = Duration(
+        hours: context
+            .read<DbSettings>()
+            .getInt(DbSettings.BOOKING_AVAILABLE_HOURS_INT));
+    for (final entry in indexedWorkouts.entries) {
+      final Workout workout = entry.value;
+      final taskId = _getTaskId(workout);
+      print("BackgroundBooker workout ${workout.name} $taskId");
+      final bookingAvailable = workout.date.subtract(bookingAvailableDelta);
       final now = DateTime.now();
-    });
-    BackgroundFetch.scheduleTask(TaskConfig(
-        taskId: 'com.foo.my.task',
-        delay: 1000,
-        periodic: false,
-        enableHeadless: true,
-        requiresNetworkConnectivity: true));
+      final bool isAvailableForBooking = bookingAvailable.isBefore(now);
+      if (isAvailableForBooking) {
+        // ignore
+        continue;
+      }
+      // schedule booking
+      final delay = bookingAvailable.difference(now);
+      print("BackgroundBooker workout scheduled in ${printDuration(delay)}");
+      BackgroundFetch.scheduleTask(TaskConfig(
+          taskId: taskId,
+          delay: delay.inMilliseconds,
+          periodic: false,
+          enableHeadless: true,
+          startOnBoot: true,
+          stopOnTerminate: false,
+          requiresNetworkConnectivity: true));
+    }
   }
+
+  //   BackgroundFetch.scheduleTask(TaskConfig(
+  //       taskId: "sd",
+  //       delay: 2000,
+  //       periodic: false,
+  //       enableHeadless: true,
+  //       startOnBoot: true,
+  //       stopOnTerminate: false,
+  //       requiresNetworkConnectivity: true));
+  // }
 }

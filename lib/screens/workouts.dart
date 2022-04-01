@@ -1,22 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:lcbc_athletica_booker/dbwhishlist.dart';
 import 'package:lcbc_athletica_booker/whishlistcache.dart';
 import 'package:provider/provider.dart';
 
+import '../backgroundbooker.dart';
 import '../dbsettings.dart';
 import '../helpers.dart';
-import '../main.dart';
 import '../reservationscache.dart';
 import '../sioapi.dart';
 import '../workout.dart';
-
-class BookedWorkoutId {
-  final String centerId;
-  final int workoutId;
-
-  BookedWorkoutId({required this.centerId, required this.workoutId});
-}
+import 'workoutitem_subtitle.dart';
 
 class ChooseWorkoutScreen extends StatelessWidget {
   final DateTime date;
@@ -37,21 +30,30 @@ class ChooseWorkoutScreen extends StatelessWidget {
                       builder: (context, snapshot) {
                         if (snapshot.hasData) {
                           return Consumer<ReservationsCache>(
-                              builder: (context, reservationsCache, child) {
-                            // get booked workouts (or null)
-                            final List<BookedWorkoutId>? bookedWorkouts =
-                                reservationsCache.state ==
-                                        ReservationsCacheState.ready
-                                    ? reservationsCache.reservations
-                                        .map((r) => BookedWorkoutId(
-                                            centerId: r.centerId,
-                                            workoutId: r.id))
-                                        .toList()
-                                    : null;
-                            return WorkoutList(
-                                workouts: snapshot.data!,
-                                bookedWorkouts: bookedWorkouts);
-                          });
+                              builder: (context, reservationsCache, child) =>
+                                  Consumer<WhishlistCache>(builder:
+                                      (context, whishlistCache, child) {
+                                    // get booked workouts (or null)
+                                    final List<WorkoutId> bookedWorkouts =
+                                        reservationsCache.state ==
+                                                ReservationsCacheState.ready
+                                            ? reservationsCache.reservations
+                                                .map((r) => WorkoutId(
+                                                    centerId: r.centerId,
+                                                    classId: r.id))
+                                                .toList()
+                                            : [];
+                                    final List<WorkoutId> whishlistWorkouts =
+                                        whishlistCache.workouts
+                                            .map((w) => WorkoutId(
+                                                centerId: w.centerId,
+                                                classId: w.id))
+                                            .toList();
+                                    return WorkoutList(
+                                        workouts: snapshot.data!,
+                                        bookedWorkouts: bookedWorkouts,
+                                        whishlistWorkouts: whishlistWorkouts);
+                                  }));
                         }
                         return const Center(child: CircularProgressIndicator());
                       })),
@@ -99,49 +101,101 @@ class NavButton extends StatelessWidget {
 
 class BookButton extends StatelessWidget {
   final Workout workout;
-  final List<BookedWorkoutId>? bookedWorkoutIds;
+  final List<WorkoutId> bookedWorkoutIds;
+  final List<WorkoutId> whishlistWorkoutIds;
   final DateFormat df;
 
   const BookButton(
       {Key? key,
       required this.workout,
       required this.bookedWorkoutIds,
+      required this.whishlistWorkoutIds,
       required this.df})
       : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    if (bookedWorkoutIds == null) {
-      return const CircularProgressIndicator();
-    }
-    final isBooked = bookedWorkoutIds!.any(
-        (e) => e.centerId == workout.centerId && e.workoutId == workout.id);
+    final isBooked = bookedWorkoutIds
+        .any((e) => e.centerId == workout.centerId && e.classId == workout.id);
+    final isFav = whishlistWorkoutIds
+        .any((e) => e.centerId == workout.centerId && e.classId == workout.id);
+    final bool isAvailForBooking = (() {
+      final bookingAvailableDelta = Duration(
+          hours: context
+              .read<DbSettings>()
+              .getInt(DbSettings.BOOKING_AVAILABLE_HOURS_INT));
+      final bookingAvailable = workout.date.subtract(bookingAvailableDelta);
+      final timeNow = DateTime.now();
+      final bool isAvailableForBooking = bookingAvailable.isBefore(timeNow);
+      return isAvailableForBooking;
+    })();
+
     return TextButton(
         style: ButtonStyle(
           foregroundColor: MaterialStateProperty.all<Color>(Colors.blue),
-          backgroundColor: MaterialStateProperty.all<Color>(Colors.black12),
+          backgroundColor: MaterialStateProperty.all<Color>(Color(0x55ffffff)),
         ),
-        onPressed: isBooked
-            ? null
-            : () async {
-                // TODO: book or queue depending on time
-                await context.read<WhishlistCache>().add(workout);
+        onPressed: (() {
+          if (isBooked || isFav) {
+            return null;
+          }
+          if (isAvailForBooking) {
+            return () async {
+              final dbs = context.read<DbSettings>();
+              final accessToken = dbs.getStr(DbSettings.ACCESS_TOKEN_STR);
+              try {
+                await putReservation(workout, accessToken);
+                try {
+                  await Provider.of<ReservationsCache>(context, listen: false)
+                      .update(context);
+                } catch (e) {
+                  print(e);
+                }
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                   content: Text(
-                      "Added \"${workout.name}\" at ${workout.centerName}, ${df.format(workout.date.toLocal())}"),
+                      "Booked \"${workout.name}\" at ${workout.centerName}, ${df.format(workout.date.toLocal())}"),
                 ));
-              },
-        child: isBooked
-            ? const Icon(Icons.star, color: Colors.red)
-            : const Icon(Icons.star_border_outlined, color: Colors.red));
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text("Unable to book \"${workout.name}\" ($e)")));
+              }
+            };
+          }
+          return () async {
+            // TODO: book or queue depending on time
+            await context.read<WhishlistCache>().add(workout);
+            await BackgroundBooker.init(context);
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(
+                  "Added \"${workout.name}\" at ${workout.centerName}, ${df.format(workout.date.toLocal())}"),
+            ));
+          };
+        })(),
+        child: (() {
+          if (isBooked) {
+            return const Icon(Icons.check, color: Colors.green);
+          }
+          if (isFav) {
+            return const Icon(Icons.star, color: Colors.red);
+          }
+          if (isAvailForBooking) {
+            return const Icon(Icons.add_box_rounded, color: Colors.blue);
+          }
+          return const Icon(Icons.star_border_outlined, color: Colors.red);
+        })());
   }
 }
 
 class WorkoutList extends StatefulWidget {
   final List<Workout> workouts;
-  final List<BookedWorkoutId>? bookedWorkouts;
+  final List<WorkoutId> bookedWorkouts;
+  final List<WorkoutId> whishlistWorkouts;
 
-  const WorkoutList({Key? key, required this.workouts, this.bookedWorkouts})
+  const WorkoutList(
+      {Key? key,
+      required this.workouts,
+      required this.bookedWorkouts,
+      required this.whishlistWorkouts})
       : super(key: key);
 
   @override
@@ -216,44 +270,36 @@ class _WorkoutListState extends State<WorkoutList> {
       ),
       Expanded(
           child: ListView.separated(
-              separatorBuilder: (context, index) => const Divider(),
+              separatorBuilder: kListSepBuilder,
               itemCount: filteredWorkouts.length,
               itemBuilder: (context, index) {
                 final workout = filteredWorkouts[index];
                 final df = DateFormat('EEE dd/MM HH:mm');
-                final timeNow = DateTime.now();
-                final bookingAvailableDelta = Duration(
-                    hours: context
-                        .read<DbSettings>()
-                        .getInt(DbSettings.BOOKING_AVAILABLE_HOURS_INT));
-                final bookingAvailable =
-                    workout.date.subtract(bookingAvailableDelta);
-                return ListTile(
-                  dense: true,
-                  visualDensity: VisualDensity.compact,
-                  title: Text("${workout.name}  (${workout.instructorName})"),
-                  leading:
-                      Text(workout.centerName.replaceFirst("Athletica", "")),
-                  trailing: BookButton(
-                      workout: workout,
-                      bookedWorkoutIds: widget.bookedWorkouts,
-                      df: df),
-                  subtitle: Text(df.format(workout.date.toLocal()) +
-                      "  " +
-                      (bookingAvailable.isAfter(timeNow)
-                          ? "opens in: " +
-                              printDuration(
-                                  bookingAvailable.difference(timeNow))
-                          : "ready (${workout.reservationsCount}/${workout.maxReservations})")),
-                  // onTap: () => {
-                  //   Navigator.of(context).push(
-                  //     MaterialPageRoute(
-                  //         builder: (context) => ShowWorkoutScreen(
-                  //               workout: workout,
-                  //             )),
-                  //   )
-                  // },
-                );
+                return Card(
+                    shape: kListItemShape,
+                    color: Colors.blue[100],
+                    child: ListTile(
+                        dense: true,
+                        visualDensity: VisualDensity.compact,
+                        title: Text(
+                            "${workout.name}  (${workout.instructorName})"),
+                        leading: Text(
+                            workout.centerName.replaceFirst("Athletica", "")),
+                        trailing: BookButton(
+                            workout: workout,
+                            bookedWorkoutIds: widget.bookedWorkouts,
+                            whishlistWorkoutIds: widget.whishlistWorkouts,
+                            df: df),
+                        subtitle: WorkoutItemSubTitle(workout: workout)
+                        // onTap: () => {
+                        //   Navigator.of(context).push(
+                        //     MaterialPageRoute(
+                        //         builder: (context) => ShowWorkoutScreen(
+                        //               workout: workout,
+                        //             )),
+                        //   )
+                        // },
+                        ));
               })),
     ]);
   }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+typedef SteamSec = int;
+
 getPageRoute(Widget w) => MaterialPageRoute(
       builder: (context) => w,
     );
@@ -38,3 +40,9 @@ String printDuration(Duration duration) {
   String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
   return "$twoDigitHours:$twoDigitMinutes:$twoDigitSeconds";
 }
+
+const kListItemShape =
+    RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10)));
+Widget kListSepBuilder(context, index) => const SizedBox(
+      height: 4,
+    );
