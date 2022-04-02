@@ -97,12 +97,13 @@ Future<void> backgroundFetchHeadlessTask(HeadlessTask task) async {
     await putReservation(workout!, accessToken);
     notification.showNow(
         title: 'Yay, ${workout.name} as been booked',
-        body: "${workout.date.toLocal()} at ${workout.centerId}");
+        body:
+            "${kDateFormatEEEddMMHHmm.format(workout.date.toLocal())} at ${workout.centerName}");
   } catch (e) {
     notification.showNow(
         title: 'Failed to book workout "${workout?.name}"',
         body:
-            "Please book manually: ${workout?.date.toLocal()},${workout?.centerName}");
+            "Please book manually: ${kDateFormatEEEddMMHHmm.format(workout!.date.toLocal())},${workout.centerName}");
     print(e);
   }
   BackgroundFetch.finish(taskId);

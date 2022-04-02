@@ -17,8 +17,8 @@ class ChooseWorkoutScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const oneDay = Duration(days: 1);
     final df = DateFormat('EEE dd. MMM');
+    const oneDay = Duration(days: 1);
     return LaScaffold(
         title: df.format(date),
         body: Padding(
@@ -103,14 +103,12 @@ class BookButton extends StatelessWidget {
   final Workout workout;
   final List<WorkoutId> bookedWorkoutIds;
   final List<WorkoutId> whishlistWorkoutIds;
-  final DateFormat df;
 
   const BookButton(
       {Key? key,
       required this.workout,
       required this.bookedWorkoutIds,
-      required this.whishlistWorkoutIds,
-      required this.df})
+      required this.whishlistWorkoutIds})
       : super(key: key);
 
   @override
@@ -153,7 +151,7 @@ class BookButton extends StatelessWidget {
                 }
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                   content: Text(
-                      "Booked \"${workout.name}\" at ${workout.centerName}, ${df.format(workout.date.toLocal())}"),
+                      "Booked \"${workout.name}\" at ${workout.centerName}, ${kDateFormatEEEddMMHHmm.format(workout.date.toLocal())}"),
                 ));
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -167,7 +165,7 @@ class BookButton extends StatelessWidget {
             await BackgroundBooker.init(context);
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text(
-                  "Added \"${workout.name}\" at ${workout.centerName}, ${df.format(workout.date.toLocal())}"),
+                  "Added \"${workout.name}\" at ${workout.centerName}, ${kDateFormatEEEddMMHHmm.format(workout.date.toLocal())}"),
             ));
           };
         })(),
@@ -204,7 +202,7 @@ class WorkoutList extends StatefulWidget {
 
 class _WorkoutListState extends State<WorkoutList> {
   String query = "";
-  static const String centerAll = "All";
+  static const String centerAll = "All centers";
   String selectedCenter = centerAll;
 
   static List<Workout> searchWodData(List<Workout> workouts, String query) {
@@ -259,7 +257,13 @@ class _WorkoutListState extends State<WorkoutList> {
           const SizedBox(
             width: 16,
           ),
-          Expanded(child: TextField(
+          Expanded(
+              child: TextField(
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              contentPadding: EdgeInsets.symmetric(horizontal: 8),
+              hintText: 'search',
+            ),
             onChanged: (v) {
               setState(() {
                 query = v;
@@ -268,13 +272,15 @@ class _WorkoutListState extends State<WorkoutList> {
           )),
         ],
       ),
+      const SizedBox(
+        height: 5,
+      ),
       Expanded(
           child: ListView.separated(
               separatorBuilder: kListSepBuilder,
               itemCount: filteredWorkouts.length,
               itemBuilder: (context, index) {
                 final workout = filteredWorkouts[index];
-                final df = DateFormat('EEE dd/MM HH:mm');
                 return Card(
                     shape: kListItemShape,
                     color: Colors.blue[100],
@@ -288,8 +294,7 @@ class _WorkoutListState extends State<WorkoutList> {
                         trailing: BookButton(
                             workout: workout,
                             bookedWorkoutIds: widget.bookedWorkouts,
-                            whishlistWorkoutIds: widget.whishlistWorkouts,
-                            df: df),
+                            whishlistWorkoutIds: widget.whishlistWorkouts),
                         subtitle: WorkoutItemSubTitle(workout: workout)
                         // onTap: () => {
                         //   Navigator.of(context).push(

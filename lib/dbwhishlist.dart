@@ -33,7 +33,7 @@ class DbWhishlist extends DbListener {
 
   Future<List<Workout>> fetchAll() async {
     final db = await database();
-    final r = await db.query(_kTableNameWhishlist);
+    final r = await db.query(_kTableNameWhishlist, orderBy: "date");
     return r.map((e) => Workout.fromMap(e)).toList();
   }
 }

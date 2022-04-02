@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 typedef SteamSec = int;
 
@@ -46,3 +47,5 @@ const kListItemShape =
 Widget kListSepBuilder(context, index) => const SizedBox(
       height: 4,
     );
+
+final kDateFormatEEEddMMHHmm = DateFormat('EEE dd/MM HH:mm');

@@ -38,7 +38,7 @@ dynamic _getConfirmDelete(Reservation workout, BuildContext context) {
             // title: Text("Are you sure you wish to unbook \"${worout.name}\"?"),
             title: const Text("Cancel reservation?"),
             content: Text(
-                "Cancel reservation for ${workout.name} (${workout.date.toLocal()} at ${workout.centerName})"),
+                "Cancel reservation for ${workout.name} (${kDateFormatEEEddMMHHmm.format(workout.date.toLocal())} at ${workout.centerName})"),
             actions: [
               TextButton(
                 child: const Text("Cancel"),
@@ -68,7 +68,6 @@ class ReservationsList extends StatelessWidget {
         itemCount: reservations.length,
         itemBuilder: (context, index) {
           final workout = reservations[index];
-          final df = DateFormat('EEE dd/MM HH:mm');
           return Dismissible(
               key: Key(workout.id.toString()),
               confirmDismiss: _getConfirmDelete(workout, context),
@@ -79,7 +78,7 @@ class ReservationsList extends StatelessWidget {
                   await deleteReservation(workout, accessToken);
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                     content: Text(
-                        "Unbooked \"${workout.name}\" at ${workout.centerName}, ${df.format(workout.date.toLocal())}"),
+                        "Unbooked \"${workout.name}\" at ${workout.centerName}, ${kDateFormatEEEddMMHHmm.format(workout.date.toLocal())}"),
                   ));
                 } catch (e) {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -98,7 +97,8 @@ class ReservationsList extends StatelessWidget {
                     visualDensity: VisualDensity.compact,
                     title: Text(workout.name),
                     trailing: Text(workout.centerName),
-                    subtitle: Text(df.format(workout.date.toLocal()) +
+                    subtitle: Text(kDateFormatEEEddMMHHmm
+                            .format(workout.date.toLocal()) +
                         "  (${workout.reservationsCount}/${workout.maxReservations})"),
                     // onTap: () => {},
                   )));

@@ -7,7 +7,6 @@ import '../helpers.dart';
 import '../workout.dart';
 
 class WorkoutItemSubTitle extends StatelessWidget {
-  final df = DateFormat('EEE dd/MM HH:mm');
   final Workout workout;
 
   WorkoutItemSubTitle({Key? key, required this.workout}) : super(key: key);
@@ -25,7 +24,7 @@ class WorkoutItemSubTitle extends StatelessWidget {
       // todo optimize - no need to re-render if booking is not available
       final timeNow = DateTime.now();
       final bool isAvailableForBooking = bookingAvailable.isBefore(timeNow);
-      return Text(df.format(workout.date.toLocal()) +
+      return Text(kDateFormatEEEddMMHHmm.format(workout.date.toLocal()) +
           "  " +
           (!isAvailableForBooking
               ? "opens in: " +
