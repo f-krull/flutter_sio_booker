@@ -17,17 +17,21 @@ class LaScaffold extends StatelessWidget {
   final Widget body;
   final String? title;
   final List<Widget>? actions;
-  const LaScaffold({Key? key, required this.body, this.actions, this.title})
+  final Widget? bottomNav;
+  const LaScaffold(
+      {Key? key, required this.body, this.actions, this.title, this.bottomNav})
       : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: title != null ? Text(title!) : null,
-          actions: actions,
-        ),
-        body: body);
+      appBar: AppBar(
+        title: title != null ? Text(title!) : null,
+        actions: actions,
+      ),
+      body: body,
+      bottomNavigationBar: bottomNav,
+    );
   }
 }
 

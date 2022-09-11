@@ -20,62 +20,63 @@ class ChooseWorkoutScreen extends StatelessWidget {
     final df = DateFormat('EEE dd. MMM');
     const oneDay = Duration(days: 1);
     return LaScaffold(
-        title: df.format(date),
-        body: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(children: [
-              Expanded(
-                  child: FutureBuilder<List<Workout>>(
-                      future: fetchWorkouts(dateFrom: date, dateTo: date),
-                      builder: (context, snapshot) {
-                        if (snapshot.hasData) {
-                          return Consumer<ReservationsCache>(
-                              builder: (context, reservationsCache, child) =>
-                                  Consumer<WhishlistCache>(builder:
-                                      (context, whishlistCache, child) {
-                                    // get booked workouts (or null)
-                                    final List<WorkoutId> bookedWorkouts =
-                                        reservationsCache.state ==
-                                                ReservationsCacheState.ready
-                                            ? reservationsCache.reservations
-                                                .map((r) => WorkoutId(
-                                                    centerId: r.centerId,
-                                                    classId: r.id))
-                                                .toList()
-                                            : [];
-                                    final List<WorkoutId> whishlistWorkouts =
-                                        whishlistCache.workouts
-                                            .map((w) => WorkoutId(
-                                                centerId: w.centerId,
-                                                classId: w.id))
-                                            .toList();
-                                    return WorkoutList(
-                                        workouts: snapshot.data!,
-                                        bookedWorkouts: bookedWorkouts,
-                                        whishlistWorkouts: whishlistWorkouts);
-                                  }));
-                        }
-                        return const Center(child: CircularProgressIndicator());
-                      })),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  NavButton(
-                      label: "prev",
-                      onClick: () => replacePage(context,
-                          ChooseWorkoutScreen(date: date.subtract(oneDay)))),
-                  NavButton(
-                      label: "next",
-                      onClick: () => replacePage(
-                          context, ChooseWorkoutScreen(date: date.add(oneDay))))
-                ]
-                    .map((e) => Expanded(
-                        child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            child: e)))
-                    .toList(),
-              )
-            ])));
+      title: df.format(date),
+      body: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(children: [
+            Expanded(
+                child: FutureBuilder<List<Workout>>(
+                    future: fetchWorkouts(dateFrom: date, dateTo: date),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData) {
+                        return Consumer<ReservationsCache>(
+                            builder: (context, reservationsCache, child) =>
+                                Consumer<WhishlistCache>(
+                                    builder: (context, whishlistCache, child) {
+                                  // get booked workouts (or null)
+                                  final List<WorkoutId> bookedWorkouts =
+                                      reservationsCache.state ==
+                                              ReservationsCacheState.ready
+                                          ? reservationsCache.reservations
+                                              .map((r) => WorkoutId(
+                                                  centerId: r.centerId,
+                                                  classId: r.id))
+                                              .toList()
+                                          : [];
+                                  final List<WorkoutId> whishlistWorkouts =
+                                      whishlistCache.workouts
+                                          .map((w) => WorkoutId(
+                                              centerId: w.centerId,
+                                              classId: w.id))
+                                          .toList();
+                                  return WorkoutList(
+                                      workouts: snapshot.data!,
+                                      bookedWorkouts: bookedWorkouts,
+                                      whishlistWorkouts: whishlistWorkouts);
+                                }));
+                      }
+                      return const Center(child: CircularProgressIndicator());
+                    })),
+          ])),
+      bottomNav: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          NavButton(
+              label: "prev",
+              onClick: () => replacePage(
+                  context, ChooseWorkoutScreen(date: date.subtract(oneDay)))),
+          NavButton(
+              label: "next",
+              onClick: () => replacePage(
+                  context, ChooseWorkoutScreen(date: date.add(oneDay))))
+        ]
+            .map((e) => Expanded(
+                child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: e)))
+            .toList(),
+      ),
+    );
   }
 }
 
