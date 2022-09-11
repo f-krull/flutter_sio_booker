@@ -14,6 +14,7 @@
 // import 'package:path_provider/path_provider.dart';
 
 import 'dart:convert';
+import 'dart:ui';
 
 import 'package:background_fetch/background_fetch.dart';
 import 'package:flutter/widgets.dart';
@@ -62,6 +63,8 @@ class Notification {
 }
 
 Future<void> backgroundFetchHeadlessTask(HeadlessTask task) async {
+  // register plugins - needed for isolate
+  DartPluginRegistrant.ensureInitialized();
   var taskId = task.taskId;
   print("backgroundFetchHeadlessTask start $taskId");
   var timeout = task.timeout;
@@ -96,7 +99,7 @@ Future<void> backgroundFetchHeadlessTask(HeadlessTask task) async {
     print("reserving my workout: ${jsonEncode(workout?.toMap())}");
     await putReservation(workout!, accessToken);
     notification.showNow(
-        title: 'Yay, ${workout.name} as been booked',
+        title: 'Yay, ${workout.name} has been booked',
         body:
             "${kDateFormatEEEddMMHHmm.format(workout.date.toLocal())} at ${workout.centerName}");
   } catch (e) {
