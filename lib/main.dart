@@ -11,7 +11,7 @@ import 'dbsettings.dart';
 import 'dbwhishlist.dart';
 import 'helpers.dart';
 import 'reservationscache.dart';
-import 'screens/workouts.dart';
+import 'screens/book/workouts.dart';
 import 'workout.dart';
 
 // todo
