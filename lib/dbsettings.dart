@@ -11,6 +11,7 @@ class DbSettings extends DbListener {
   Map<String, String> _settings = {};
 
   static const String ACCESS_TOKEN_STR = "ACCESS_TOKEN_STR";
+  static const String NOTIFY_BEFORE_WORKOUT_MIN_INT = "NOTIFY_BEFORE_WORKOUT_MIN_INT";
   static const String BOOKING_AVAILABLE_HOURS_INT =
       "BOOKING_AVAILABLE_HOURS_INT";
   DbSettings(LaDb ladb) : super(ladb);
@@ -23,6 +24,7 @@ class DbSettings extends DbListener {
     _keys.clear();
     _settings = await _readFromDb();
     await _initValueInt(BOOKING_AVAILABLE_HOURS_INT, 5 * 24);
+    await _initValueInt(NOTIFY_BEFORE_WORKOUT_MIN_INT, 3 * 60 + 30);
     _keys.add(ACCESS_TOKEN_STR);
   }
 

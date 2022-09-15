@@ -269,7 +269,8 @@ class BookButton extends StatelessWidget {
                 ));
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text("Unable to book \"${workout.name}\" ($e)")));
+                    content:
+                        Text("D: Unable to book \"${workout.name}\" ($e)")));
               }
             };
           }

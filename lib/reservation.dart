@@ -1,6 +1,8 @@
 import 'workout.dart';
 
 class Reservation extends Workout {
+  final queuePosition;
+
   Reservation(
       {required int classId,
       required String name,
@@ -9,6 +11,7 @@ class Reservation extends Workout {
       required String centerId,
       required int reservationsCount,
       required int maxReservations,
+      required this.queuePosition,
       required String instructorName})
       : super(
             id: classId,
@@ -28,6 +31,7 @@ class Reservation extends Workout {
         centerId: json["centerId"],
         reservationsCount: json["reservationsCount"],
         maxReservations: json["maxReservations"],
+        queuePosition: json["queuePosition"],
         instructorName: json["instructorName"]);
   }
 }

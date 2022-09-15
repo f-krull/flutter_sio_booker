@@ -18,7 +18,6 @@ import 'dart:ui';
 
 import 'package:background_fetch/background_fetch.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:lcbc_athletica_booker/whishlistcache.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -27,40 +26,9 @@ import 'dbsettings.dart';
 import 'helpers.dart';
 import 'sioapi.dart';
 import 'workout.dart';
+import 'notifications.dart' as noti;
 
 const _kKeyCommDataStr = "commData";
-
-class Notification {
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
-
-  Future<void> init() async {
-    // init  notifications
-    const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('app_icon');
-    const InitializationSettings initializationSettings =
-        InitializationSettings(android: initializationSettingsAndroid);
-    await flutterLocalNotificationsPlugin.initialize(initializationSettings,
-        onSelectNotification: (String? payload) async {
-      if (payload != null) {
-        debugPrint('notification payload: $payload');
-      }
-    });
-  }
-
-  void showNow({required String title, required String body}) {
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails('fk_channel_id', 'fk channel',
-            channelDescription: 'some channel description',
-            importance: Importance.defaultImportance,
-            priority: Priority.defaultPriority,
-            ticker: 'ticker');
-    const NotificationDetails platformChannelSpecifics =
-        NotificationDetails(android: androidPlatformChannelSpecifics);
-    flutterLocalNotificationsPlugin
-        .show(0, title, body, platformChannelSpecifics, payload: 'item x');
-  }
-}
 
 Future<void> backgroundFetchHeadlessTask(HeadlessTask task) async {
   // register plugins - needed for isolate
@@ -74,7 +42,7 @@ Future<void> backgroundFetchHeadlessTask(HeadlessTask task) async {
     return;
   }
   // try init notifications to be able to show errors
-  final notification = Notification();
+  final notification = noti.Notification();
   try {
     await notification.init();
   } catch (e) {
@@ -106,7 +74,7 @@ Future<void> backgroundFetchHeadlessTask(HeadlessTask task) async {
     notification.showNow(
         title: 'Failed to book workout "${workout?.name}"',
         body:
-            "Please book manually: ${kDateFormatEEEddMMHHmm.format(workout!.date.toLocal())},${workout.centerName}");
+            "Please book manually: ${kDateFormatEEEddMMHHmm.format(workout!.date.toLocal())},${workout.centerName}. ${e.toString()}");
     print(e);
   }
   BackgroundFetch.finish(taskId);

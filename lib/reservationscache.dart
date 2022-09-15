@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import 'dbsettings.dart';
 import 'sioapi.dart';
+import 'notifications.dart' as noti;
 
 enum ReservationsCacheState {
   init,
@@ -23,10 +24,33 @@ class ReservationsCache with ChangeNotifier {
   Future<void> update(BuildContext context) async {
     final dbs = context.read<DbSettings>();
     final accessToken = dbs.getStr(DbSettings.ACCESS_TOKEN_STR);
-    final r = await _update(accessToken);
+
+    await _update(accessToken);
     // prune whishlist
     whishlistCache.update(reservations);
-    return r;
+    // update notifications
+    final notification = noti.Notification();
+    final notifiyBeforeMin =
+        dbs.getInt(DbSettings.NOTIFY_BEFORE_WORKOUT_MIN_INT);
+
+    try {
+      await notification.init();
+      notification.clear();
+    } catch (e) {
+      print("error notifications: $e");
+    }
+    for (var reservation in reservations) {
+      final notifyDate =
+          reservation.date.subtract(Duration(minutes: notifiyBeforeMin));
+      print("scheduled notification at $notifyDate");
+      notification.showAt(
+          date: notifyDate,
+          title:
+              "Your workout starts at ${reservation.date.toLocal()} (${reservation.centerName})",
+          body: "For any last-minute changes check the app");
+    }
+
+    return;
   }
 
   Future<void> _update(String accessToken) async {

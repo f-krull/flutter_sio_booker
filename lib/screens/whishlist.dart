@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:lcbc_athletica_booker/backgroundbooker.dart';
 import 'package:lcbc_athletica_booker/dbsettings.dart';
-import 'package:lcbc_athletica_booker/dbwhishlist.dart';
 import 'package:lcbc_athletica_booker/helpers.dart';
-import 'package:lcbc_athletica_booker/screens/workoutitem_subtitle.dart';
 import 'package:lcbc_athletica_booker/whishlistcache.dart';
 import 'package:provider/provider.dart';
 
@@ -16,17 +13,32 @@ class WhishlistItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-        shape: kListItemShape,
-        color: Colors.red[100],
-        child: ListTile(
-            dense: true,
-            visualDensity: VisualDensity.compact,
-            title: Text("${workout.name}  (${workout.instructorName})"),
-            leading: Text(workout.centerName.replaceFirst("Athletica", "")),
-            subtitle: WorkoutItemSubTitle(
-              workout: workout,
-            )));
+    final bookingAvailableDelta = Duration(
+        hours: context
+            .read<DbSettings>()
+            .getInt(DbSettings.BOOKING_AVAILABLE_HOURS_INT));
+
+    final bookingAvailable = workout.date.subtract(bookingAvailableDelta);
+    return Consumer<SteamSec>(builder: (BuildContext contxt, sec, __) {
+      final timeNow = DateTime.now();
+      final bool isAvailableForBooking = bookingAvailable.isBefore(timeNow);
+
+      return Card(
+          shape: kListItemShape,
+          color: isAvailableForBooking ? Colors.grey[300] : Colors.red[100],
+          child: ListTile(
+              dense: true,
+              visualDensity: VisualDensity.compact,
+              title: Text("${workout.name}  (${workout.instructorName})"),
+              leading: Text(workout.centerName.replaceFirst("Athletica", "")),
+              subtitle: Text(kDateFormatEEEddMMHHmm
+                      .format(workout.date.toLocal()) +
+                  "  " +
+                  (!isAvailableForBooking
+                      ? "opens in: " +
+                          printDuration(bookingAvailable.difference(timeNow))
+                      : "booking has started - please book manually (${workout.reservationsCount}/${workout.maxReservations})"))));
+    });
   }
 }
 

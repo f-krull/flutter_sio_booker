@@ -67,23 +67,23 @@ class ReservationsList extends StatelessWidget {
         separatorBuilder: kListSepBuilder,
         itemCount: reservations.length,
         itemBuilder: (context, index) {
-          final workout = reservations[index];
+          final Reservation reservation = reservations[index];
           return Dismissible(
-              key: Key(workout.id.toString()),
-              confirmDismiss: _getConfirmDelete(workout, context),
+              key: Key(reservation.id.toString()),
+              confirmDismiss: _getConfirmDelete(reservation, context),
               onDismissed: (_) async {
                 final dbs = context.read<DbSettings>();
                 final accessToken = dbs.getStr(DbSettings.ACCESS_TOKEN_STR);
                 try {
-                  await deleteReservation(workout, accessToken);
+                  await deleteReservation(reservation, accessToken);
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                     content: Text(
-                        "Unbooked \"${workout.name}\" at ${workout.centerName}, ${kDateFormatEEEddMMHHmm.format(workout.date.toLocal())}"),
+                        "Unbooked \"${reservation.name}\" at ${reservation.centerName}, ${kDateFormatEEEddMMHHmm.format(reservation.date.toLocal())}"),
                   ));
                 } catch (e) {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                       content: Text(
-                          "Unable to cancel reservation for \"${workout.name}\" ($e)")));
+                          "Unable to cancel reservation for \"${reservation.name}\" ($e)")));
                   print(e);
                 }
                 await Provider.of<ReservationsCache>(context, listen: false)
@@ -91,15 +91,17 @@ class ReservationsList extends StatelessWidget {
               },
               child: Card(
                   shape: kListItemShape,
-                  color: Colors.green[100],
+                  color: reservation.queuePosition > 0
+                      ? Colors.grey[300]
+                      : Colors.green[100],
                   child: ListTile(
                     dense: true,
                     visualDensity: VisualDensity.compact,
-                    title: Text(workout.name),
-                    trailing: Text(workout.centerName),
+                    title: Text(reservation.name),
+                    trailing: Text(reservation.centerName),
                     subtitle: Text(kDateFormatEEEddMMHHmm
-                            .format(workout.date.toLocal()) +
-                        "  (${workout.reservationsCount}/${workout.maxReservations})"),
+                            .format(reservation.date.toLocal()) +
+                        "  (${reservation.reservationsCount}/${reservation.maxReservations})${reservation.queuePosition > 0 ? "\nYour place in queue: ${reservation.queuePosition}" : ""}"),
                     // onTap: () => {},
                   )));
         });

@@ -35,6 +35,7 @@ class WhishlistCache with ChangeNotifier {
     final Set<WorkoutId> resIds = reservations
         .map((e) => WorkoutId(classId: e.id, centerId: e.centerId))
         .toSet();
+    // remove workouts that have been booked
     List<Workout> toRemove = _workouts.where((w) {
       final b = resIds.contains(WorkoutId(classId: w.id, centerId: w.centerId));
       return b;

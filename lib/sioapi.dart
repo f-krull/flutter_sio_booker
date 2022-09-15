@@ -51,7 +51,16 @@ Future<void> putReservation(Workout workout, String accessToken) async {
   final headers = {'AccessToken': accessToken};
   http.Response r = await http.put(Uri.parse(url), headers: headers);
   print(r.headers);
+  print(r.statusCode);
   print(r.body);
+  if (r.statusCode != io.HttpStatus.ok) {
+    var msg = "error when booking workout (${r.statusCode})";
+    try {
+      msg = jsonDecode(r.body)["errorDetails"];
+      // ignore: empty_catches
+    } catch (e) {}
+    throw Exception(msg);
+  }
   print("booked");
   return;
 }
@@ -74,6 +83,7 @@ Future<List<Reservation>> fetchReservations(String accessToken) async {
   print("fetching $url");
   final headers = {'AccessToken': accessToken};
   http.Response r = await http.get(Uri.parse(url), headers: headers);
+  print(r.body);
   List<Reservation> l = [];
   if (r.statusCode != io.HttpStatus.ok) {
     return l;
