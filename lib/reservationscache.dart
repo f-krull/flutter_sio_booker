@@ -4,6 +4,7 @@ import 'package:lcbc_athletica_booker/whishlistcache.dart';
 import 'package:provider/provider.dart';
 
 import 'dbsettings.dart';
+import 'helpers.dart';
 import 'sioapi.dart';
 import 'notifications.dart' as noti;
 
@@ -46,7 +47,7 @@ class ReservationsCache with ChangeNotifier {
       notification.showAt(
           date: notifyDate,
           title:
-              "Your workout starts at ${reservation.date.toLocal()} (${reservation.centerName})",
+              "Your workout starts at ${kDateFormatEEEddMMHHmm.format(reservation.date.toLocal())} (${reservation.centerName})",
           body: "For any last-minute changes check the app");
     }
 
