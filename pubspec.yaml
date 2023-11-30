@@ -31,11 +31,12 @@ dependencies:
     sdk: flutter
   http: ^0.13.4
   intl:
+  file: ^6.1.4
   sqflite:
   provider:
   background_fetch:
   shared_preferences:
-  flutter_local_notifications:
+  flutter_local_notifications: ^9.9.1
   
 
   # The following adds the Cupertino Icons font to your application.
